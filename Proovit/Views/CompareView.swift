@@ -51,7 +51,10 @@ struct CompareView: View {
                 case .sideBySide:
                     sideBySideContent
                 case .progressReel:
-                    progressReelPlaceholder
+                    ProgressReelMode(
+                        tracker: selectedTracker,
+                        entries: selectedTracker?.entries ?? []
+                    )
                 }
 
                 Color.clear.frame(height: Theme.Spacing.xl)
@@ -228,26 +231,6 @@ struct CompareView: View {
                 .foregroundStyle(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    // MARK: - Progress Reel placeholder (replaced in Step 12)
-
-    private var progressReelPlaceholder: some View {
-        VStack(spacing: Theme.Spacing.md) {
-            Image(systemName: "play.rectangle")
-                .font(.system(size: 48))
-                .foregroundStyle(Theme.textTertiary)
-            Text("Progress Reel")
-                .font(.title3.bold())
-                .foregroundStyle(Theme.textPrimary)
-            Text("Auto-generated timelapse — coming in Step 12.")
-                .font(.body)
-                .foregroundStyle(Theme.textSecondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding(.horizontal, Theme.Spacing.xl)
-        .padding(.vertical, Theme.Spacing.xxl)
-        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Date picker sheet
