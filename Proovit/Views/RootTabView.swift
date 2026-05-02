@@ -50,7 +50,7 @@ struct RootTabView: View {
         case .calendar:
             CalendarView()
         case .compare:
-            TabPlaceholderView(title: "Compare", comingInStep: 9)
+            CompareView()
         case .profile:
             TabPlaceholderView(title: "Profile", comingInStep: 10)
         }
