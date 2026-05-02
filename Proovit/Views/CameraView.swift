@@ -21,6 +21,15 @@ import SwiftUI
 import UIKit
 
 struct CameraView: View {
+    /// If supplied (e.g. from the "Capture <Name>" CTA on Tracker
+    /// Detail), the camera opens with that tracker preselected. From
+    /// the bottom-bar FAB we pass nil and default to the first tracker.
+    let preselectedTrackerID: UUID?
+
+    init(preselectedTrackerID: UUID? = nil) {
+        self.preselectedTrackerID = preselectedTrackerID
+    }
+
     @Environment(\.dismiss) private var dismiss
 
     @Query(sort: \Tracker.sortOrder) private var trackers: [Tracker]
@@ -269,7 +278,7 @@ struct CameraView: View {
         }
 
         if selectedTrackerID == nil {
-            selectedTrackerID = trackers.first?.id
+            selectedTrackerID = preselectedTrackerID ?? trackers.first?.id
         }
     }
 

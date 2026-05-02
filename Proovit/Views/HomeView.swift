@@ -79,10 +79,19 @@ struct HomeView: View {
 
             VStack(spacing: 0) {
                 ForEach(trackers) { tracker in
-                    TrackerRow(
-                        tracker: tracker,
-                        streakDays: streak(for: tracker)
-                    )
+                    NavigationLink {
+                        TrackerDetailView(tracker: tracker)
+                    } label: {
+                        TrackerRow(
+                            tracker: tracker,
+                            streakDays: streak(for: tracker)
+                        )
+                    }
+                    // 💡 Learn: .plain prevents SwiftUI's default
+                    // NavigationLink styling (blue text, system tap
+                    // animations) from overriding our row design.
+                    .buttonStyle(.plain)
+
                     Rectangle()
                         .fill(Theme.divider)
                         .frame(height: 1)

@@ -41,7 +41,12 @@ struct RootTabView: View {
     private var contentView: some View {
         switch selection {
         case .home:
-            HomeView(profile: profile)
+            // 💡 Learn: One NavigationStack per tab is the standard
+            // pattern. Pushing TrackerDetailView from Home lives inside
+            // this stack and doesn't affect Calendar/Compare/Profile.
+            NavigationStack {
+                HomeView(profile: profile)
+            }
         case .calendar:
             TabPlaceholderView(title: "Calendar", comingInStep: 8)
         case .compare:

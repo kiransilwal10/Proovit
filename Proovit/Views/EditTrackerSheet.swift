@@ -2,17 +2,23 @@
 //  EditTrackerSheet.swift
 //  Proovit
 //
-//  Modal sheet for creating a new tracker. The sheet picks color and
-//  SF Symbol from the curated lists in Theme so the Home screen stays
-//  visually coherent. Step 5 wires Add mode from Home; Step 7 will
-//  extend this sheet (or its caller) to handle Edit + Delete from
-//  Tracker Detail's toolbar.
+//  Modal sheet for creating, renaming, or deleting a tracker. Color
+//  and SF Symbol come from the curated lists in Theme so Home stays
+//  visually coherent.
+//
+//  Mode is determined by the `editing:` parameter:
+//   - `nil`  → Add: creates a new Tracker on Save
+//   - non-nil → Edit: mutates the supplied Tracker on Save; Delete
+//                     wipes the tracker, its entries (cascade), and
+//                     each entry's JPEG on disk (PhotoStore.delete)
 //
 
 import SwiftData
 import SwiftUI
 
 struct EditTrackerSheet: View {
+
+    let editing: Tracker?
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -22,9 +28,24 @@ struct EditTrackerSheet: View {
     // context the sheet inserts into.
     @Query(sort: \Tracker.sortOrder) private var trackers: [Tracker]
 
-    @State private var name: String = ""
-    @State private var colorAssetName: String = Theme.trackerPalette.first?.assetName ?? "Forest"
-    @State private var iconSymbolName: String = Theme.trackerSymbols.first ?? "star.fill"
+    @State private var name: String
+    @State private var colorAssetName: String
+    @State private var iconSymbolName: String
+    @State private var showingDeleteConfirm: Bool = false
+
+    init(editing: Tracker? = nil) {
+        self.editing = editing
+        // 💡 Learn: Initializing @State in init requires the underscore
+        // syntax. We pre-fill from `editing` if present so Edit mode
+        // shows the current values; otherwise sensible defaults.
+        _name = State(initialValue: editing?.name ?? "")
+        _colorAssetName = State(
+            initialValue: editing?.colorAssetName ?? Theme.trackerPalette.first?.assetName ?? "Forest"
+        )
+        _iconSymbolName = State(
+            initialValue: editing?.iconSymbolName ?? Theme.trackerSymbols.first ?? "star.fill"
+        )
+    }
 
     private var trimmedName: String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -34,19 +55,23 @@ struct EditTrackerSheet: View {
         !trimmedName.isEmpty
     }
 
+    private var titleText: String {
+        editing == nil ? "New tracker" : "Edit tracker"
+    }
+
     var body: some View {
         NavigationStack {
             Form {
                 nameSection
                 colorSection
                 iconSection
+                if editing != nil {
+                    deleteSection
+                }
             }
-            // 💡 Learn: scrollContentBackground(.hidden) lets us replace
-            // Form's grouped-gray background with our Theme.background.
-            // Without this, the sheet would have iOS's default chrome.
             .scrollContentBackground(.hidden)
             .background(Theme.background)
-            .navigationTitle("New tracker")
+            .navigationTitle(titleText)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -107,9 +132,6 @@ struct EditTrackerSheet: View {
                 .frame(width: 36, height: 36)
 
             if isSelected {
-                // 💡 Learn: strokeBorder draws inside the bounds (vs stroke
-                // which centers on the path), keeping the selected swatch
-                // exactly the same diameter as unselected ones.
                 Circle()
                     .strokeBorder(Theme.textPrimary, lineWidth: 2)
                     .frame(width: 44, height: 44)
@@ -153,29 +175,79 @@ struct EditTrackerSheet: View {
             .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.medium))
     }
 
-    // MARK: - Save
+    private var deleteSection: some View {
+        Section {
+            Button(role: .destructive) {
+                showingDeleteConfirm = true
+            } label: {
+                HStack {
+                    Spacer()
+                    Text("Delete tracker")
+                    Spacer()
+                }
+            }
+        }
+        .listRowBackground(Theme.surface)
+        .confirmationDialog(
+            "Delete \(editing?.name ?? "this tracker")?",
+            isPresented: $showingDeleteConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                deleteTracker()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This deletes all photos for this tracker. This cannot be undone.")
+        }
+    }
+
+    // MARK: - Save / Delete
 
     private func save() {
         guard canSave else { return }
 
-        // Append to the end of the list — preserves the user's existing
-        // ordering and matches Home's first-insert-first-shown behavior.
-        let nextSortOrder = (trackers.map(\.sortOrder).max() ?? -1) + 1
-
-        let newTracker = Tracker(
-            name: trimmedName,
-            colorAssetName: colorAssetName,
-            iconSymbolName: iconSymbolName,
-            sortOrder: nextSortOrder
-        )
-        modelContext.insert(newTracker)
+        if let editing {
+            editing.name = trimmedName
+            editing.colorAssetName = colorAssetName
+            editing.iconSymbolName = iconSymbolName
+        } else {
+            // Append to the end — preserves the user's existing ordering
+            // and matches Home's first-insert-first-shown behavior.
+            let nextSortOrder = (trackers.map(\.sortOrder).max() ?? -1) + 1
+            let newTracker = Tracker(
+                name: trimmedName,
+                colorAssetName: colorAssetName,
+                iconSymbolName: iconSymbolName,
+                sortOrder: nextSortOrder
+            )
+            modelContext.insert(newTracker)
+        }
         try? modelContext.save()
+        dismiss()
+    }
 
+    private func deleteTracker() {
+        guard let editing else { return }
+
+        // 💡 Learn: We delete the photo files BEFORE the tracker. The
+        // SwiftData cascade on Tracker.entries fires when the tracker
+        // is deleted, removing the ProgressEntry rows — but it doesn't
+        // know about the JPEGs on disk. We grab the filenames first,
+        // then remove the files, then remove the tracker.
+        if let store = try? PhotoStore() {
+            for entry in editing.entries {
+                try? store.delete(entry.photoFilename)
+            }
+        }
+
+        modelContext.delete(editing)
+        try? modelContext.save()
         dismiss()
     }
 }
 
-#Preview {
+#Preview("Add") {
     EditTrackerSheet()
         .modelContainer(
             for: [Tracker.self, ProgressEntry.self, UserProfile.self],
