@@ -18,6 +18,7 @@ struct RootTabView: View {
     // canonical "lift state up" pattern. The bar doesn't own which tab
     // is active — RootTabView does. The bar just renders + reports taps.
     @State private var selection: AppTab = .home
+    @State private var showingCamera: Bool = false
 
     var body: some View {
         // 💡 Learn: safeAreaInset(edge: .bottom) is the modern replacement
@@ -28,11 +29,11 @@ struct RootTabView: View {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 CustomTabBar(
                     selection: $selection,
-                    onCameraTap: {
-                        // Step 6 wires this to present the CameraView
-                        // as a full-screen cover.
-                    }
+                    onCameraTap: { showingCamera = true }
                 )
+            }
+            .fullScreenCover(isPresented: $showingCamera) {
+                CameraView()
             }
     }
 
