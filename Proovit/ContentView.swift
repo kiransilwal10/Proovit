@@ -9,20 +9,17 @@ import SwiftData
 import SwiftUI
 
 /// The app's routing root. Decides between the onboarding flow (no
-/// UserProfile yet) and the main experience.
-///
-/// In Step 3 the main experience is `HomeView` standalone. Step 4 wraps
-/// it in `RootTabView` (Home / Calendar / Camera / Compare / Profile).
+/// UserProfile yet) and the main tabbed experience.
 struct ContentView: View {
     // 💡 Learn: @Query is reactive — when the underlying SwiftData
     // store changes (here, when onboarding inserts the first
     // UserProfile), this view re-renders automatically and the
-    // `if profiles.isEmpty` branch flips to HomeView.
+    // `if profiles.isEmpty` branch flips to RootTabView.
     @Query private var profiles: [UserProfile]
 
     var body: some View {
         if let profile = profiles.first {
-            HomeView(profile: profile)
+            RootTabView(profile: profile)
         } else {
             OnboardingView()
         }
