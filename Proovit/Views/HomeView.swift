@@ -27,6 +27,8 @@ struct HomeView: View {
     @Query(sort: \ProgressEntry.capturedAt, order: .reverse)
     private var recentEntries: [ProgressEntry]
 
+    @State private var showingAddTracker: Bool = false
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
@@ -42,6 +44,9 @@ struct HomeView: View {
             .padding(.top, Theme.Spacing.lg)
         }
         .background(Theme.background)
+        .sheet(isPresented: $showingAddTracker) {
+            EditTrackerSheet()
+        }
     }
 
     // MARK: - Header
@@ -73,21 +78,41 @@ struct HomeView: View {
             sectionHeader("TRACKERS")
 
             VStack(spacing: 0) {
-                ForEach(Array(trackers.enumerated()), id: \.element.id) { index, tracker in
+                ForEach(trackers) { tracker in
                     TrackerRow(
                         tracker: tracker,
                         streakDays: streak(for: tracker)
                     )
-                    if index < trackers.count - 1 {
-                        Rectangle()
-                            .fill(Theme.divider)
-                            .frame(height: 1)
-                    }
+                    Rectangle()
+                        .fill(Theme.divider)
+                        .frame(height: 1)
                 }
+
+                addTrackerCell
             }
             .background(Theme.surface)
             .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.medium))
         }
+    }
+
+    /// Tappable row at the bottom of the TRACKERS card that opens the
+    /// EditTrackerSheet in add mode.
+    private var addTrackerCell: some View {
+        Button {
+            showingAddTracker = true
+        } label: {
+            HStack(spacing: Theme.Spacing.xs) {
+                Image(systemName: "plus")
+                    .font(.body.weight(.semibold))
+                Text("Add new category")
+                    .font(.body)
+            }
+            .foregroundStyle(Theme.textSecondary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, Theme.Spacing.md)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     /// Today's streak for one tracker. Pulls capture dates from the
