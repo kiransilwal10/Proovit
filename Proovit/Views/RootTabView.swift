@@ -20,12 +20,19 @@ struct RootTabView: View {
     @State private var selection: AppTab = .home
     @State private var showingCamera: Bool = false
 
+    // 💡 Learn: One NotificationScheduler instance shared with child
+    // views via `.environment(_:)`. ProfileView reads it back with
+    // `@Environment(NotificationScheduler.self)` and calls `sync()`
+    // when the toggle or reminder time changes.
+    @State private var notificationScheduler = NotificationScheduler()
+
     var body: some View {
         // 💡 Learn: safeAreaInset(edge: .bottom) is the modern replacement
         // for manually padding ScrollView content above a custom bar.
         // It both renders the bar AND tells the content how much space
         // the bar consumes — so a ScrollView's last row isn't covered.
         contentView
+            .environment(notificationScheduler)
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 CustomTabBar(
                     selection: $selection,
@@ -40,6 +47,15 @@ struct RootTabView: View {
             // changes the picker on Profile, this re-renders and the
             // color scheme updates app-wide.
             .preferredColorScheme(resolvedColorScheme(for: profile.appearancePreference))
+            .task {
+                // Sync once on launch so the schedule reflects any
+                // changes the user made the previous session.
+                await notificationScheduler.sync(
+                    notificationsEnabled: profile.notificationsEnabled,
+                    reminderHour: profile.reminderHour,
+                    reminderMinute: profile.reminderMinute
+                )
+            }
     }
 
     /// Maps the user's stored preference to SwiftUI's optional ColorScheme.

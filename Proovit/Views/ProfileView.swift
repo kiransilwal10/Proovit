@@ -44,6 +44,8 @@ private struct ProfileContent: View {
     let trackers: [Tracker]
     let entries: [ProgressEntry]
 
+    @Environment(NotificationScheduler.self) private var notificationScheduler
+
     @State private var showingEditProfile = false
     @State private var showingTimePicker = false
     @State private var showingPrivacy = false
@@ -72,6 +74,28 @@ private struct ProfileContent: View {
         .sheet(isPresented: $showingPrivacy) {
             PrivacySheet()
         }
+        // 💡 Learn: onChange fires after the new value is committed,
+        // so reading profile.* inside the closure gives us the new
+        // value. We watch each field individually rather than build
+        // a composite key — Swift's compiler-checked Equatable trips
+        // on synthesized tuples otherwise.
+        .onChange(of: profile.notificationsEnabled) { _, _ in
+            Task { await syncReminder() }
+        }
+        .onChange(of: profile.reminderHour) { _, _ in
+            Task { await syncReminder() }
+        }
+        .onChange(of: profile.reminderMinute) { _, _ in
+            Task { await syncReminder() }
+        }
+    }
+
+    private func syncReminder() async {
+        await notificationScheduler.sync(
+            notificationsEnabled: profile.notificationsEnabled,
+            reminderHour: profile.reminderHour,
+            reminderMinute: profile.reminderMinute
+        )
     }
 
     // MARK: - Identity
