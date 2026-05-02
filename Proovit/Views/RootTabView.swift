@@ -35,6 +35,21 @@ struct RootTabView: View {
             .fullScreenCover(isPresented: $showingCamera) {
                 CameraView()
             }
+            // 💡 Learn: Reading profile.appearancePreference inside body
+            // ties this view to the @Observable property — when the user
+            // changes the picker on Profile, this re-renders and the
+            // color scheme updates app-wide.
+            .preferredColorScheme(resolvedColorScheme(for: profile.appearancePreference))
+    }
+
+    /// Maps the user's stored preference to SwiftUI's optional ColorScheme.
+    /// `nil` means "follow the system" (the default).
+    private func colorScheme(for preference: AppearancePreference) -> ColorScheme? {
+        switch preference {
+        case .system: return nil
+        case .light:  return .light
+        case .dark:   return .dark
+        }
     }
 
     @ViewBuilder
@@ -52,7 +67,7 @@ struct RootTabView: View {
         case .compare:
             CompareView()
         case .profile:
-            TabPlaceholderView(title: "Profile", comingInStep: 10)
+            ProfileView()
         }
     }
 }
