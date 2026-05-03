@@ -60,7 +60,7 @@ struct RootTabView: View {
 
     /// Maps the user's stored preference to SwiftUI's optional ColorScheme.
     /// `nil` means "follow the system" (the default).
-    private func colorScheme(for preference: AppearancePreference) -> ColorScheme? {
+    private func resolvedColorScheme(for preference: AppearancePreference) -> ColorScheme? {
         switch preference {
         case .system: return nil
         case .light:  return .light

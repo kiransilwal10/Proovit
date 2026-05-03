@@ -173,33 +173,37 @@ struct HomeView: View {
     }
 }
 
-/// Single thumbnail in the recent-entries strip. Step 3 ships a placeholder
-/// graphic — the real photo loader (`PhotoStore.image(for:)`) lights up in
-/// Step 6 once we have a capture pipeline.
+/// Single thumbnail in the recent-entries strip. Loads the actual JPEG
+/// off disk via `PhotoThumbnailView` (which wraps `PhotoStore`).
 private struct RecentEntryThumbnail: View {
     let entry: ProgressEntry
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-            ZStack {
-                RoundedRectangle(cornerRadius: Theme.Radius.medium)
-                    .fill(Theme.surface)
-
-                Image(systemName: "photo")
-                    .font(.title2)
-                    .foregroundStyle(Theme.textTertiary)
-            }
-            .frame(width: 100, height: 120)
+            PhotoThumbnailView(filename: entry.photoFilename)
+                .frame(width: 100, height: 120)
+                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.medium))
 
             Text(entry.tracker?.name ?? "—")
                 .font(.caption)
                 .foregroundStyle(Theme.textPrimary)
 
-            Text("Today")
+            Text(relativeDateText(for: entry.capturedAt))
                 .font(.caption2)
                 .foregroundStyle(Theme.textTertiary)
         }
         .frame(width: 100)
+    }
+
+    /// "Today" / "Yesterday" / short date — same convention iOS uses
+    /// in Photos and Messages.
+    private func relativeDateText(for date: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) { return "Today" }
+        if calendar.isDateInYesterday(date) { return "Yesterday" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d"
+        return formatter.string(from: date)
     }
 }
 

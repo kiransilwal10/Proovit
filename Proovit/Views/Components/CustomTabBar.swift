@@ -95,8 +95,9 @@ struct CustomTabBar: View {
             }
         }
         .frame(width: 80)
-        // Lift the FAB so it sits above the bar's top edge.
-        .offset(y: -16)
+        // Subtle lift so the FAB feels elevated without poking too far
+        // above the bar's top edge.
+        .offset(y: -8)
         .buttonStyle(.plain)
     }
 }
