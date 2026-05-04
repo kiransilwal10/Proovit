@@ -53,8 +53,12 @@ struct DayPhotosSheet: View {
                 Button {
                     presentedEntry = entry
                 } label: {
+                    // 💡 Learn: .fit forces each cell into the column's
+                    // width while staying square. .fill would make the
+                    // cell EXPAND past the column to satisfy the 1:1
+                    // ratio, breaking the grid layout.
                     PhotoThumbnailView(filename: entry.photoFilename)
-                        .aspectRatio(1, contentMode: .fill)
+                        .aspectRatio(1, contentMode: .fit)
                         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.medium))
                 }
                 .buttonStyle(.plain)

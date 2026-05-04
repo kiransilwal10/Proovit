@@ -28,6 +28,13 @@ struct CameraView: View {
 
     init(preselectedTrackerID: UUID? = nil) {
         self.preselectedTrackerID = preselectedTrackerID
+        // 💡 Learn: Initialize selectedTrackerID synchronously in init.
+        // If we deferred this to .task or .onAppear, the first body
+        // render could see selectedTrackerID == nil and currentTracker
+        // would fall back to trackers.first (Fitness) — meaning a photo
+        // captured before .task finished would be saved against the
+        // wrong tracker. Setting it here makes the first render correct.
+        _selectedTrackerID = State(initialValue: preselectedTrackerID)
     }
 
     @Environment(\.dismiss) private var dismiss
@@ -64,7 +71,11 @@ struct CameraView: View {
     }
 
     private var currentTracker: Tracker? {
-        if let id = selectedTrackerID, let tracker = trackers.first(where: { $0.id == id }) {
+        // Belt-and-suspenders: prefer explicit picker selection, fall
+        // back to the preselect, then to the first tracker. Prevents
+        // the "always Fitness" bug if any race slips through.
+        let id = selectedTrackerID ?? preselectedTrackerID
+        if let id, let tracker = trackers.first(where: { $0.id == id }) {
             return tracker
         }
         return trackers.first
@@ -277,8 +288,11 @@ struct CameraView: View {
             break
         }
 
+        // selectedTrackerID is now seeded in init() from preselectedTrackerID.
+        // Only need to fall back to the first tracker for the FAB path
+        // (no preselect, picker untouched).
         if selectedTrackerID == nil {
-            selectedTrackerID = preselectedTrackerID ?? trackers.first?.id
+            selectedTrackerID = trackers.first?.id
         }
     }
 

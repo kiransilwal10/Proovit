@@ -62,7 +62,14 @@ struct CompareView: View {
             .padding(.top, Theme.Spacing.lg)
         }
         .background(Theme.background)
-        .onAppear {
+        // 💡 Learn: .onAppear fires before SwiftData's @Query has
+        // populated `trackers`, so calling initializeIfNeeded() there
+        // would see an empty array and never clamp dates to the
+        // first tracker's range. .onChange(of:initial:) fires both on
+        // first appearance AND once @Query lands data, so the dates
+        // clamp correctly. The internal `if selectedTrackerID == nil`
+        // guard prevents repeat re-clamps on later @Query refreshes.
+        .onChange(of: trackers, initial: true) { _, _ in
             initializeIfNeeded()
         }
         .sheet(isPresented: $pickingLeft) {
@@ -177,7 +184,6 @@ struct CompareView: View {
                 ZStack {
                     if let entry {
                         PhotoThumbnailView(filename: entry.photoFilename)
-                            .aspectRatio(1, contentMode: .fill)
                     } else {
                         ZStack {
                             Theme.background
@@ -185,9 +191,13 @@ struct CompareView: View {
                                 .font(.title2)
                                 .foregroundStyle(Theme.textTertiary)
                         }
-                        .aspectRatio(1, contentMode: .fit)
                     }
                 }
+                // 💡 Learn: .aspectRatio(.fit) on the ZStack forces both
+                // date cards to be the same square shape regardless of
+                // the underlying photo's orientation. PhotoThumbnailView
+                // handles its own .fill cropping internally.
+                .aspectRatio(1, contentMode: .fit)
                 .clipped()
 
                 Text(formattedShortDate(date))

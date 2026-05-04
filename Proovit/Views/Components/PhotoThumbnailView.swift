@@ -27,6 +27,14 @@ struct PhotoThumbnailView: View {
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
+                    // 💡 Learn: With .fill content mode, the image scales
+                    // to cover the parent's frame in BOTH dimensions —
+                    // which means it overflows in whichever dimension
+                    // doesn't match the parent's aspect ratio. Without
+                    // these two modifiers the overflow leaks past grid
+                    // cell boundaries and the layout looks broken.
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
             } else {
                 ZStack {
                     Theme.surface

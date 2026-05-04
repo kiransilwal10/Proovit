@@ -76,7 +76,10 @@ struct CalendarGridView: View {
 
     private var dayOfWeekRow: some View {
         HStack(spacing: 4) {
-            ForEach(weekdaySymbols, id: \.self) { symbol in
+            // 💡 Learn: Single-letter weekday symbols repeat (S/T appear
+            // twice), so id: \.self triggers SwiftUI's "duplicate ID"
+            // runtime warning. Iterating with the index as id avoids it.
+            ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
                 Text(symbol)
                     .font(.caption)
                     .foregroundStyle(Theme.textTertiary)
